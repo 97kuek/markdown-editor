@@ -180,8 +180,79 @@ const editorView = createEditor(editorPane, ytext.toString(), (doc) => {
 renderMarkdown(ytext.toString(), previewPane)
 
 // Initialize Scroll Sync
-const { onEditorScroll } = setupScrollSync(editorView, previewPane)
+const { onEditorScroll, setEnabled: setScrollSyncEnabled } = setupScrollSync(editorView, previewPane)
 onScrollHandler = onEditorScroll
+
+// --- Settings Logic ---
+const SETTINGS_KEY = 'mde-settings'
+let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{"scrollSync": true}')
+
+// Apply initial settings
+setScrollSyncEnabled(settings.scrollSync)
+
+document.getElementById('btn-settings')?.addEventListener('click', () => {
+  // Create Modal (reuse logic or simple implementation)
+  const modalOverlay = document.createElement('div')
+  Object.assign(modalOverlay.style, {
+    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', zIndex: 1000,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    backdropFilter: 'blur(5px)'
+  })
+
+  const modalContent = document.createElement('div')
+  Object.assign(modalContent.style, {
+    backgroundColor: '#161b22', padding: '24px', borderRadius: '12px',
+    color: '#fff', border: '1px solid #30363d', minWidth: '300px',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+  })
+
+  const title = document.createElement('h2')
+  title.textContent = 'Settings'
+  title.style.marginTop = '0'
+  title.style.borderBottom = '1px solid #30363d'
+  title.style.paddingBottom = '12px'
+
+  // Scroll Sync Toggle
+  const toggleContainer = document.createElement('div')
+  toggleContainer.style.display = 'flex'
+  toggleContainer.style.alignItems = 'center'
+  toggleContainer.style.justifyContent = 'space-between'
+  toggleContainer.style.marginTop = '16px'
+
+  const label = document.createElement('span')
+  label.textContent = 'Scroll Sync'
+
+  const toggleInput = document.createElement('input')
+  toggleInput.type = 'checkbox'
+  toggleInput.checked = settings.scrollSync
+  toggleInput.style.transform = 'scale(1.5)'
+
+  toggleInput.addEventListener('change', () => {
+    settings.scrollSync = toggleInput.checked
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+    setScrollSyncEnabled(settings.scrollSync)
+  })
+
+  toggleContainer.appendChild(label)
+  toggleContainer.appendChild(toggleInput)
+
+  const closeBtn = document.createElement('button')
+  closeBtn.textContent = 'Close'
+  Object.assign(closeBtn.style, {
+    marginTop: '24px', width: '100%', padding: '8px',
+    backgroundColor: '#3b82f6', color: 'white', border: 'none',
+    borderRadius: '6px', cursor: 'pointer'
+  })
+  closeBtn.onclick = () => document.body.removeChild(modalOverlay)
+  modalOverlay.onclick = (e) => { if (e.target === modalOverlay) document.body.removeChild(modalOverlay) }
+
+  modalContent.appendChild(title)
+  modalContent.appendChild(toggleContainer)
+  modalContent.appendChild(closeBtn)
+  modalOverlay.appendChild(modalContent)
+  document.body.appendChild(modalOverlay)
+})
 
 // Initialize File System Access
 setupFileSystem(editorView, (content) => {

@@ -3,6 +3,7 @@ import { EditorView } from "codemirror"
 export function setupScrollSync(editorView: EditorView, preview: HTMLElement) {
     let isScrolling = false
     let timeoutId: any = null
+    let enabled = true // Default state
 
     // Helper to prevent sync loop
     const markScrolling = () => {
@@ -15,6 +16,7 @@ export function setupScrollSync(editorView: EditorView, preview: HTMLElement) {
 
     // 1. Editor -> Preview
     const onEditorScroll = () => {
+        if (!enabled) return
         if (isScrolling) return
         markScrolling()
 
@@ -64,6 +66,7 @@ export function setupScrollSync(editorView: EditorView, preview: HTMLElement) {
 
     // 2. Preview -> Editor
     const onPreviewScroll = () => {
+        if (!enabled) return
         if (isScrolling) return
         markScrolling()
 
@@ -113,6 +116,11 @@ export function setupScrollSync(editorView: EditorView, preview: HTMLElement) {
     // Attach Preview Listener
     preview.addEventListener('scroll', onPreviewScroll)
 
-    // Return Editor Listener (to be attached via CM hook)
-    return { onEditorScroll }
+    // Method to toggle state
+    const setEnabled = (state: boolean) => {
+        enabled = state
+    }
+
+    // Return Editor Listener (to be attached via CM hook) and control
+    return { onEditorScroll, setEnabled }
 }
