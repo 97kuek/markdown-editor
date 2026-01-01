@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/markdown-editor/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Markdown Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <script type="module" crossorigin src="/markdown-editor/assets/index-BUJNyMD6.js"></script>
+  <link rel="stylesheet" crossorigin href="/markdown-editor/assets/index-jb8aE26Y.css">
+</head>
+
+<body>
+  <div id="layout">
+    <header id="toolbar">
+      <h1 class="logo">MD Editor</h1>
+      <div class="actions">
+        <button id="btn-open">Open File</button>
+        <button id="btn-save">Save File</button>
+        <button id="btn-export-md">Download .md</button>
+        <button id="btn-export-pdf">Print / Save as PDF</button>
+      </div>
+    </header>
+    <main id="workspace">
+      <!-- Editor Pane -->
+      <div id="editor-pane"></div>
+      <!-- Resizer -->
+      <div id="resizer"></div>
+      <!-- Preview Pane -->
+      <div id="preview-pane" class="markdown-body"></div>
+    </main>
+  </div>
+</body>
+
+</html>
