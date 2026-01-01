@@ -19,16 +19,27 @@
   <div id="layout">
     <header id="toolbar">
       <h1 class="logo">MD Editor</h1>
-      <div class="actions">
-        <button id="btn-toggle-view" style="display: none;" title="Toggle View"><span
+      <div class="toolbar-group">
+        <button id="btn-toc" class="icon-btn" title="Table of Contents"><span
+            class="material-symbols-outlined">list</span></button>
+        <button id="btn-toggle-view" class="icon-btn mobile-only" title="Toggle View"><span
             class="material-symbols-outlined">visibility</span></button>
-        <button id="btn-open" title="Open File"><span class="material-symbols-outlined">file_open</span></button>
+        <button id="btn-export-md" class="icon-btn" title="Save Markdown"><span
+            class="material-symbols-outlined">file_open</span></button>
         <button id="btn-save" title="Save File"><span class="material-symbols-outlined">save</span></button>
         <!-- .md export removed, rely on Save File -->
         <button id="btn-export-pdf" title="Print / Save as PDF"><span
             class="material-symbols-outlined">print</span></button>
       </div>
     </header>
+    <div id="status-bar">
+      <span id="status-lines">Ln 1, Col 1</span>
+      <span id="status-words">0 words</span>
+    </div>
+    <div id="toc-panel" class="hidden">
+      <h3>Table of Contents</h3>
+      <div id="toc-list"></div>
+    </div>
     <main id="workspace">
       <!-- Editor Pane -->
       <div id="editor-pane"></div>

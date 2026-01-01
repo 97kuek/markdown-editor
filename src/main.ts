@@ -1,3 +1,4 @@
+import { EditorView } from "codemirror"
 import './style.css'
 import 'github-markdown-css/github-markdown-dark.css'
 import 'katex/dist/katex.min.css'
@@ -9,9 +10,10 @@ import './responsive.css'
 
 import { createEditor } from './editor'
 import { renderMarkdown } from './preview'
-import { ScrollSync } from './scroll-sync'
+import { setupScrollSync } from './scroll-sync'
 import { enableResizer } from './resizer'
 import { setupFileSystem } from './fs-access'
+import { setupTOC } from './toc'
 
 const STORAGE_KEY = 'mde-content'
 const initialContent = localStorage.getItem(STORAGE_KEY) || `# Welcome to Markdown Editor
@@ -60,25 +62,35 @@ btnToggleView?.addEventListener('click', () => {
 })
 
 // Initialize Editor
+let onScrollHandler: (view: EditorView) => void = () => { }
+
 const editorView = createEditor(editorPane, initialContent, (doc) => {
   renderMarkdown(doc, previewPane)
   localStorage.setItem(STORAGE_KEY, doc)
-}, () => {
-  // logic handled in scrollSync, this callback might be redundant if we bind directly in ScrollSync
-  // but keeping it for potential extensions
+}, (view) => {
+  onScrollHandler(view)
+}, (stats) => {
+  const linesEl = document.getElementById('status-lines')
+  const wordsEl = document.getElementById('status-words')
+  if (linesEl) linesEl.textContent = `Ln ${stats.cursorLine}, Col ${stats.cursorCol}`
+  if (wordsEl) wordsEl.textContent = `${stats.words} words`
 })
 
 // Initialize Preview
 renderMarkdown(initialContent, previewPane)
 
 // Initialize Scroll Sync
-new ScrollSync(editorView, previewPane)
+const { onEditorScroll } = setupScrollSync(editorView, previewPane)
+onScrollHandler = onEditorScroll
 
 // Initialize File System Access
 setupFileSystem(editorView, (content) => {
   renderMarkdown(content, previewPane)
   localStorage.setItem(STORAGE_KEY, content)
 })
+
+// Initialize TOC
+setupTOC(editorView)
 
 // Export Buttons
 document.getElementById('btn-export-md')?.addEventListener('click', () => {
