@@ -199,6 +199,26 @@ btnShare.addEventListener('click', async () => {
 
   modalContent.appendChild(title)
   modalContent.appendChild(canvas)
+
+  // Show URL text
+  const urlText = document.createElement('p')
+  urlText.textContent = url
+  urlText.style.fontSize = '12px'
+  urlText.style.color = '#8b949e'
+  urlText.style.marginTop = '16px'
+  urlText.style.wordBreak = 'break-all'
+  modalContent.appendChild(urlText)
+
+  // Warning for localhost
+  if (url.includes('localhost') || url.includes('127.0.0.1')) {
+    const warning = document.createElement('p')
+    warning.textContent = '⚠️ Mobile cannot connect to "localhost". proper IP address or deploy.'
+    warning.style.color = '#ef4444'
+    warning.style.fontSize = '12px'
+    warning.style.fontWeight = 'bold'
+    modalContent.appendChild(warning)
+  }
+
   modalContent.appendChild(document.createElement('br'))
   modalContent.appendChild(closeBtn)
   modalOverlay.appendChild(modalContent)
