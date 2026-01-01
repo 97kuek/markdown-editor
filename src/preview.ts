@@ -12,14 +12,45 @@ const md = new MarkdownIt({
 })
 
 // Inject line numbers
-md.renderer.rules.paragraph_open = md.renderer.rules.heading_open = md.renderer.rules.image = md.renderer.rules.code_block = md.renderer.rules.fence = md.renderer.rules.blockquote_open = md.renderer.rules.list_item_open = md.renderer.rules.bullet_list_open = md.renderer.rules.ordered_list_open = md.renderer.rules.table_open = md.renderer.rules.tr_open = (tokens, idx, options, _env, self) => {
+const injectLineNumber = (tokens: any, idx: number) => {
     const token = tokens[idx]
     if (token.map && token.map.length) {
         token.attrSet('data-source-line', String(token.map[0] + 1)) // 1-based index
     }
-    // Return default render
-    return self.renderToken(tokens, idx, options)
 }
+
+// Simple rules where we can just inject attribute and render default token
+const openerRules = [
+    'paragraph_open',
+    'heading_open',
+    'blockquote_open',
+    'list_item_open',
+    'bullet_list_open',
+    'ordered_list_open',
+    'table_open',
+    'tr_open'
+]
+
+openerRules.forEach(rule => {
+    const original = md.renderer.rules[rule] || ((t, i, o, _e, s) => s.renderToken(t, i, o))
+    md.renderer.rules[rule] = (tokens, idx, options, env, self) => {
+        injectLineNumber(tokens, idx)
+        return original(tokens, idx, options, env, self)
+    }
+})
+
+// Complex rules that usually have their own renderers (fence, code_block, image)
+const complexRules = ['fence', 'code_block', 'image']
+complexRules.forEach(rule => {
+    const original = md.renderer.rules[rule]
+    // Only wrap if it exists (it should for these)
+    if (original) {
+        md.renderer.rules[rule] = (tokens, idx, options, env, self) => {
+            injectLineNumber(tokens, idx)
+            return original(tokens, idx, options, env, self)
+        }
+    }
+})
 
 md.options.highlight = function (str, lang) {
     if (lang && hljs.getLanguage(lang)) {
