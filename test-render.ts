@@ -1,26 +1,34 @@
-import MarkdownIt from "markdown-it"
-import texmath from "markdown-it-texmath"
-import katex from "katex"
 
+import MarkdownIt from "markdown-it"
 import hljs from "highlight.js"
 
-// Setup parser
 const md = new MarkdownIt({
     html: true,
     linkify: true,
     typographer: true,
-    langPrefix: 'hljs language-'
+    highlight: function (str, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+            try {
+                return '<pre class="hljs"><code>' +
+                    hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+                    '</code></pre>';
+            } catch (__) { }
+        }
+        return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+    }
 })
 
-// Inject line numbers
+// Simulate the logic in preview.ts
 const injectLineNumber = (tokens: any, idx: number) => {
     const token = tokens[idx]
     if (token.map && token.map.length) {
-        token.attrSet('data-source-line', String(token.map[0] + 1)) // 1-based index
+        token.attrSet('data-source-line', String(token.map[0] + 1))
     }
 }
 
-// Simple rules where we can just inject attribute and render default token
+// Check if fence rule exists
+console.log('Original fence rule:', !!md.renderer.rules.fence);
+
 const openerRules = [
     'paragraph_open',
     'heading_open',
@@ -40,36 +48,21 @@ openerRules.forEach(rule => {
     }
 })
 
-// Complex rules that usually have their own renderers (fence, code_block, image)
 const complexRules = ['fence', 'code_block', 'image']
 complexRules.forEach(rule => {
     const original = md.renderer.rules[rule]
-    // Only wrap if it exists (it should for these)
     if (original) {
         md.renderer.rules[rule] = (tokens, idx, options, env, self) => {
             injectLineNumber(tokens, idx)
             return original(tokens, idx, options, env, self)
         }
+    } else {
+        console.log(`Warning: No original rule for ${rule}`);
     }
 })
 
-md.options.highlight = function (str, lang) {
-    if (lang && hljs.getLanguage(lang)) {
-        try {
-            return hljs.highlight(str, { language: lang, ignoreIllegals: true }).value
-        } catch (__) { }
-    }
-    return '' // use external default escaping
-}
+const input = '```typescript\nconsole.log("test")\n```';
+const output = md.render(input);
 
-// Use texmath plugin
-md.use(texmath, {
-    engine: katex,
-    delimiters: 'dollars',
-    katexOptions: { macros: { "\\RR": "\\mathbb{R}" } } // example options
-})
-
-export function renderMarkdown(content: string, element: HTMLElement) {
-    const html = md.render(content)
-    element.innerHTML = html
-}
+console.log('Output lines:');
+console.log(output);

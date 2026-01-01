@@ -349,9 +349,21 @@ button.icon-btn span.material-symbols-outlined {
 }
 
 .markdown-body pre {
-  background-color: #16161a !important;
+  background-color: #0d1117 !important;
+  /* GitHub Dark code bg */
   border: 1px solid var(--border-color) !important;
   border-radius: var(--radius-md) !important;
+  padding: 16px !important;
+  overflow: auto;
+}
+
+.markdown-body pre code {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-family: var(--font-code) !important;
+  color: inherit !important;
 }
 
 .markdown-body blockquote {
