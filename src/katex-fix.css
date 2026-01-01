@@ -1,0 +1,20 @@
+/* CSS for KaTeX positioning fix override */
+.katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Fix for KaTeX superscripts/subscripts getting messed up by reset styles */
+/* github-markdown-css or other resets might be setting vertical-align: baseline or similar on * */
+.katex sup {
+    vertical-align: super !important;
+}
+
+.katex sub {
+    vertical-align: sub !important;
+}
+
+/* Also ensure font-size isn't crushed if resets apply */
+.katex {
+    font-size: 1.1em;
+}
