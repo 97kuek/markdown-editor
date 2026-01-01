@@ -4,6 +4,7 @@ import 'katex/dist/katex.min.css'
 import 'markdown-it-texmath/css/texmath.css'
 import './katex-fix.css' // Keep for now, might check if needed
 import './resizer.css'
+import './responsive.css'
 
 
 import { createEditor } from './editor'
@@ -42,6 +43,21 @@ const resizerElement = document.getElementById('resizer') as HTMLElement
 const container = document.getElementById('workspace') as HTMLElement
 
 enableResizer(resizerElement, editorPane, container)
+
+// Mobile View Toggle
+const btnToggleView = document.getElementById('btn-toggle-view')
+let isPreviewable = false
+
+btnToggleView?.addEventListener('click', () => {
+  isPreviewable = !isPreviewable
+  if (isPreviewable) {
+    container.classList.add('show-preview')
+    btnToggleView.textContent = 'Back to Editor'
+  } else {
+    container.classList.remove('show-preview')
+    btnToggleView.textContent = 'Preview'
+  }
+})
 
 // Initialize Editor
 const editorView = createEditor(editorPane, initialContent, (doc) => {
