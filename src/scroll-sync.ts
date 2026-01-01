@@ -52,26 +52,67 @@ export function setupScrollSync(editorView: EditorView, preview: HTMLElement) {
                     minDiff = diff
                     targetElement = el
                 }
-                // Optimization: since elements are likely ordered, we can stop if we go too far
-                // but DOM structure might be nested so simple break is risky without tree walking
             }
         }
 
         if (targetElement) {
             // Scroll preview to this element
             const elTop = targetElement.offsetTop
-            preview.scrollTo({ top: elTop, behavior: 'auto' }) // auto instant, smooth might lag
+            preview.scrollTo({ top: elTop, behavior: 'auto' })
         }
     }
 
-    // 2. Preview -> Editor (Optional/Complex, sticking to Editor->Preview primary for now or simple percentage fallback?)
-    // For now implementation asked for Image Paste sync consideration which implies Editor->Preview accuracy.
+    // 2. Preview -> Editor
+    const onPreviewScroll = () => {
+        if (isScrolling) return
+        markScrolling()
 
-    // Attach current simple sync or enhanced?
-    // User asked "Please consider scroll sync with image paste".
-    // Logical line sync solves this because image lines in editor are just 1 line (reference) or folded line.
-    // The preview image will have the matching data-line.
-    // So jumping to that line will show the image top.
+        const previewScrollTop = preview.scrollTop
+        const previewHeight = preview.clientHeight
 
+        // Edge cases
+        if (previewScrollTop === 0) {
+            editorView.scrollDOM.scrollTop = 0
+            return
+        }
+        if (previewScrollTop + previewHeight >= preview.scrollHeight - 50) {
+            editorView.scrollDOM.scrollTop = editorView.scrollDOM.scrollHeight
+            return
+        }
+
+        // Find visible element
+        const elements = Array.from(preview.querySelectorAll('[data-source-line]')) as HTMLElement[]
+
+        let targetLine = 1
+
+        // Find the element that is at or just below the top of the scroll container
+        for (const el of elements) {
+            const elTop = el.offsetTop
+            // We want the element that is currently visible at the top
+            // Check if this element is near the scrollTop
+            if (elTop >= previewScrollTop) {
+                const line = parseInt(el.getAttribute('data-source-line') || '0', 10)
+                if (line > 0) {
+                    targetLine = line
+                    break
+                }
+            }
+        }
+
+        // Scroll Editor to that line
+        try {
+            const line = editorView.state.doc.line(targetLine)
+            editorView.dispatch({
+                effects: EditorView.scrollIntoView(line.from, { y: 'start' })
+            })
+        } catch (e) {
+            // Line might be out of range if document changed rapidly
+        }
+    }
+
+    // Attach Preview Listener
+    preview.addEventListener('scroll', onPreviewScroll)
+
+    // Return Editor Listener (to be attached via CM hook)
     return { onEditorScroll }
 }
