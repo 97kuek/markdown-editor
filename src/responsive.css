@@ -29,9 +29,15 @@
         display: none;
     }
 
-    /* Stack panes (though we toggle visibility instead) */
+    /* Stack panes */
     #workspace {
+        /* Fix container height for mobile browsers (address bar issue) */
         position: relative;
+        height: calc(100vh - 52px);
+        /* Fallback */
+        height: calc(100dvh - 52px);
+        /* Modern Mobile Viewport Height */
+        overflow: hidden;
     }
 
     #editor-pane,
@@ -42,19 +48,56 @@
         width: 100%;
         height: 100%;
         border: none;
+        z-index: 1;
+        background-color: var(--bg-color);
+        /* Ensure scrolling works smoothly */
+        -webkit-overflow-scrolling: touch;
     }
 
-    /* By default show Editor, hide Preview via classes */
-    #workspace.show-preview #editor-pane {
-        visibility: hidden;
+    /* Editor handles its own scroll, so no overflow on pane */
+    #editor-pane {
+        overflow: hidden;
+    }
+
+    /* Preview needs explicit overflow */
+    #preview-pane {
+        overflow-y: auto;
+    }
+
+    /* Ensure CodeMirror captures touches properly */
+    .cm-scroller {
+        touch-action: pan-y;
+        overflow-y: auto !important;
+    }
+
+    /* Toggle Mechanism: Use Z-Index and Visibility to prevent interaction with hidden layer */
+
+    /* Editor Mode (Default) */
+    #workspace:not(.show-preview) #editor-pane {
+        z-index: 10;
+        visibility: visible;
     }
 
     #workspace:not(.show-preview) #preview-pane {
+        z-index: 0;
         visibility: hidden;
     }
 
-    /* Ensure padding is comfortable */
+    /* Preview Mode */
+    #workspace.show-preview #preview-pane {
+        z-index: 10;
+        visibility: visible;
+    }
+
+    #workspace.show-preview #editor-pane {
+        z-index: 0;
+        visibility: hidden;
+    }
+
+    /* Padding adjustment */
     #preview-pane {
         padding: 24px 16px;
+        padding-bottom: 80px;
+        /* Extra bottom padding for mobile browsers */
     }
 }

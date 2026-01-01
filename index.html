@@ -11,6 +11,8 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
 
 <body>
@@ -18,11 +20,13 @@
     <header id="toolbar">
       <h1 class="logo">MD Editor</h1>
       <div class="actions">
-        <button id="btn-toggle-view" style="display: none;">Preview</button>
-        <button id="btn-open">Open File</button>
-        <button id="btn-save">Save File</button>
-        <button id="btn-export-md">Download .md</button>
-        <button id="btn-export-pdf">Print / Save as PDF</button>
+        <button id="btn-toggle-view" style="display: none;" title="Toggle View"><span
+            class="material-symbols-outlined">visibility</span></button>
+        <button id="btn-open" title="Open File"><span class="material-symbols-outlined">file_open</span></button>
+        <button id="btn-save" title="Save File"><span class="material-symbols-outlined">save</span></button>
+        <!-- .md export removed, rely on Save File -->
+        <button id="btn-export-pdf" title="Print / Save as PDF"><span
+            class="material-symbols-outlined">print</span></button>
       </div>
     </header>
     <main id="workspace">

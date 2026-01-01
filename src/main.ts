@@ -52,10 +52,10 @@ btnToggleView?.addEventListener('click', () => {
   isPreviewable = !isPreviewable
   if (isPreviewable) {
     container.classList.add('show-preview')
-    btnToggleView.textContent = 'Back to Editor'
+    btnToggleView.innerHTML = '<span class="material-symbols-outlined">edit</span>' // Switch to Edit icon
   } else {
     container.classList.remove('show-preview')
-    btnToggleView.textContent = 'Preview'
+    btnToggleView.innerHTML = '<span class="material-symbols-outlined">visibility</span>' // Back to Preview icon
   }
 })
 
