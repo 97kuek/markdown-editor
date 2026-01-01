@@ -310,6 +310,7 @@ button.icon-btn span.material-symbols-outlined {
   background-color: var(--sidebar-bg) !important;
   font-family: var(--font-code) !important;
   font-size: 14px;
+  height: 100% !important;
 }
 
 .cm-gutters {

@@ -86,13 +86,80 @@ if (!getRoomFromUrl()) {
 }
 
 const ydoc = new Y.Doc()
-const provider = new WebrtcProvider(roomName, ydoc, { signaling: ['wss://signaling.yjs.dev'] }) // Public signaling server for demo
+
+// Use multiple public signaling servers for better reliability
+const signalingServers = [
+  'wss://signaling.yjs.dev',
+  'wss://y-webrtc-signaling-eu.herokuapp.com',
+  'wss://y-webrtc-signaling-us.herokuapp.com'
+]
+
+const provider = new WebrtcProvider(roomName, ydoc, {
+  signaling: signalingServers,
+  password: undefined, // Optional: add password protection if needed
+  maxConns: 20 + Math.floor(Math.random() * 15), // Randomize slightly to avoid all peers connecting to same mesh
+  filterBcConns: true,
+  peerOpts: {} // default
+})
+
 const ytext = ydoc.getText('codemirror')
 
 // Sync initial content if room is empty, otherwise let Yjs handle it
 if (ytext.toString() === '') {
   ytext.insert(0, initialContent)
 }
+
+// Connection Status Indicator
+const statusGroup = document.createElement('div')
+statusGroup.className = 'status-item'
+statusGroup.style.display = 'flex'
+statusGroup.style.alignItems = 'center'
+statusGroup.style.marginLeft = '10px'
+statusGroup.style.fontSize = '12px'
+
+const statusDot = document.createElement('span')
+statusDot.style.width = '8px'
+statusDot.style.height = '8px'
+statusDot.style.borderRadius = '50%'
+statusDot.style.backgroundColor = '#6e7681' // Disconnected gray
+statusDot.style.marginRight = '6px'
+
+const statusText = document.createElement('span')
+statusText.textContent = 'Offline'
+statusText.style.color = '#8b949e' // Muted text
+
+statusGroup.appendChild(statusDot)
+statusGroup.appendChild(statusText)
+
+// Add to status bar (assuming there is one, or just append to toolbar for now)
+const footer = document.querySelector('footer')
+if (footer) {
+  footer.insertBefore(statusGroup, footer.firstChild)
+} else {
+  // Fallback: add to toolbar if no footer
+  // document.querySelector('.toolbar-group')?.appendChild(statusGroup) 
+  // Actually, let's create a minimal footer if it doesn't exist or put it in top bar
+  const toolbar = document.querySelector('.toolbar')
+  if (toolbar) {
+    statusGroup.style.marginLeft = 'auto'
+    statusGroup.style.marginRight = '16px'
+    toolbar.appendChild(statusGroup)
+  }
+}
+
+// Monitor connection
+provider.on('status', (event: any) => {
+  if (event.status === 'connected') {
+    statusDot.style.backgroundColor = '#2ea043' // Green
+    statusText.textContent = 'Connected'
+    statusText.style.color = '#c9d1d9'
+  } else {
+    statusDot.style.backgroundColor = '#f85149' // Red
+    statusText.textContent = 'Disconnected'
+    statusText.style.color = '#8b949e'
+  }
+})
+
 
 // Editor with Collaboration
 const editorView = createEditor(editorPane, ytext.toString(), (doc) => {
@@ -161,7 +228,8 @@ if (toolbarGroup && btnSave) {
 
 // Modal Logic
 btnShare.addEventListener('click', async () => {
-  const url = window.location.href
+  // Initial URL
+  let currentUrl = window.location.href
 
   // Create Modal Elements
   const modalOverlay = document.createElement('div')
@@ -176,7 +244,8 @@ btnShare.addEventListener('click', async () => {
   Object.assign(modalContent.style, {
     backgroundColor: '#161b22', padding: '32px', borderRadius: '12px',
     textAlign: 'center', color: '#fff', border: '1px solid #30363d',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    maxWidth: '90%', width: '400px'
   })
 
   const title = document.createElement('h2')
@@ -184,7 +253,23 @@ btnShare.addEventListener('click', async () => {
   title.style.marginTop = '0'
 
   const canvas = document.createElement('canvas')
-  await QRCode.toCanvas(canvas, url, { width: 256, margin: 2, color: { dark: '#000000', light: '#ffffff' } })
+  // Wrapper for canvas to center it and set min-height to prevent jumping
+  const canvasContainer = document.createElement('div')
+  canvasContainer.style.display = 'flex'
+  canvasContainer.style.justifyContent = 'center'
+  canvasContainer.style.margin = '20px 0'
+  canvasContainer.appendChild(canvas)
+
+  const updateQRCode = async (urlToEncode: string) => {
+    try {
+      await QRCode.toCanvas(canvas, urlToEncode, { width: 256, margin: 2, color: { dark: '#000000', light: '#ffffff' } })
+    } catch (err) {
+      console.error('QR Gen Error', err)
+    }
+  }
+
+  // Initial generation
+  await updateQRCode(currentUrl)
 
   const closeBtn = document.createElement('button')
   closeBtn.textContent = 'Close'
@@ -198,29 +283,63 @@ btnShare.addEventListener('click', async () => {
   modalOverlay.onclick = (e) => { if (e.target === modalOverlay) document.body.removeChild(modalOverlay) }
 
   modalContent.appendChild(title)
-  modalContent.appendChild(canvas)
+  // Input field for manual IP
+  const inputContainer = document.createElement('div')
+  inputContainer.style.textAlign = 'left'
+  inputContainer.style.marginBottom = '10px'
 
-  // Show URL text
-  const urlText = document.createElement('p')
-  urlText.textContent = url
-  urlText.style.fontSize = '12px'
-  urlText.style.color = '#8b949e'
-  urlText.style.marginTop = '16px'
-  urlText.style.wordBreak = 'break-all'
-  modalContent.appendChild(urlText)
+  const inputLabel = document.createElement('label')
+  inputLabel.textContent = 'URL (Edit local IP if needed):'
+  inputLabel.style.display = 'block'
+  inputLabel.style.marginBottom = '5px'
+  inputLabel.style.fontSize = '12px'
+  inputLabel.style.color = '#8b949e'
+
+  const urlInput = document.createElement('input')
+  urlInput.type = 'text'
+  urlInput.value = currentUrl
+  Object.assign(urlInput.style, {
+    width: '100%', padding: '8px', borderRadius: '6px',
+    border: '1px solid #30363d', backgroundColor: '#0d1117', color: '#c9d1d9',
+    boxSizing: 'border-box'
+  })
+
+  urlInput.addEventListener('input', async () => {
+    const newUrl = urlInput.value
+    await updateQRCode(newUrl)
+    // Check for localhost warning dynamically
+    if (newUrl.includes('localhost') || newUrl.includes('127.0.0.1')) {
+      warning.style.display = 'block'
+    } else {
+      warning.style.display = 'none'
+    }
+  })
+
+  inputContainer.appendChild(inputLabel)
+  inputContainer.appendChild(urlInput)
+
+  modalContent.appendChild(canvasContainer)
+  modalContent.appendChild(inputContainer)
 
   // Warning for localhost
-  if (url.includes('localhost') || url.includes('127.0.0.1')) {
-    const warning = document.createElement('p')
-    warning.textContent = '⚠️ Mobile cannot connect to "localhost". proper IP address or deploy.'
-    warning.style.color = '#ef4444'
-    warning.style.fontSize = '12px'
-    warning.style.fontWeight = 'bold'
-    modalContent.appendChild(warning)
-  }
+  const warning = document.createElement('p')
+  warning.innerHTML = '⚠️ <b>localhost</b> detected.<br>Replace "localhost" with your PC\'s Local IP (e.g., 192.168.x.x) to connect mobile.'
+  warning.style.color = '#e3b341' // Warning yellow
+  warning.style.fontSize = '12px'
+  warning.style.marginTop = '10px'
+  warning.style.display = (currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1')) ? 'block' : 'none'
+
+  modalContent.appendChild(warning)
 
   modalContent.appendChild(document.createElement('br'))
   modalContent.appendChild(closeBtn)
   modalOverlay.appendChild(modalContent)
   document.body.appendChild(modalOverlay)
+
+  // Auto-select the "localhost" part if present to make it easy to type over
+  if (currentUrl.includes('localhost')) {
+    urlInput.focus()
+    const start = currentUrl.indexOf('localhost')
+    urlInput.setSelectionRange(start, start + 9)
+  }
 })
