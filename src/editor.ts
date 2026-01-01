@@ -18,7 +18,8 @@ export function createEditor(
     initialContent: string,
     onChange: (doc: string) => void,
     onScroll: (view: EditorView) => void,
-    onStatsUpdate: (stats: EditorStats) => void
+    onStatsUpdate: (stats: EditorStats) => void,
+    extensions: any[] = []
 ) {
     const startState = EditorState.create({
         doc: initialContent,
@@ -97,7 +98,8 @@ export function createEditor(
                         }
                     }
                 }
-            })
+            }),
+            ...extensions
         ]
     })
 

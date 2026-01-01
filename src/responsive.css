@@ -1,43 +1,47 @@
-/* ... existing styles ... */
+/* Mobile & Tablet Optimizations */
 
-/* Mobile / Tablet Styles */
+/* Defaults hidden on desktop */
+.mobile-only {
+    display: none !important;
+}
+
 @media (max-width: 768px) {
+    :root {
+        --header-height: 52px;
+    }
 
-    /* Toolbar: Reduce padding and font size */
+    .mobile-only {
+        display: flex !important;
+    }
+
+    /* Toolbar: Compact Mode */
     #toolbar {
-        padding: 0 12px;
+        padding: 0 16px;
     }
 
     .logo {
-        font-size: 16px;
+        font-size: 18px;
     }
 
-    .actions button {
-        padding: 6px 10px;
-        font-size: 12px;
+    .logo span {
+        /* Hide text logo on very small screens if needed, 
+           or keep it short. "MD Editor" is short enough. */
     }
 
-    /* Show Toggle Button */
-    #btn-toggle-view {
-        display: flex !important;
-        background-color: var(--accent-color) !important;
-        color: white !important;
-    }
-
-    /* Hide Desktop-only interactions */
+    /* Hide Desktop elements */
     #resizer {
         display: none;
     }
 
-    /* Stack panes */
+    #btn-toc {
+        display: none !important;
+        /* Access TOC differently or hide on mobile for now */
+    }
+
+    /* Layout: Stacked / Tabbed */
     #workspace {
-        /* Fix container height for mobile browsers (address bar issue) */
-        position: relative;
-        height: calc(100vh - 52px);
-        /* Fallback */
-        height: calc(100dvh - 52px);
-        /* Modern Mobile Viewport Height */
-        overflow: hidden;
+        height: calc(100vh - var(--header-height) - var(--status-height));
+        height: calc(100dvh - var(--header-height) - var(--status-height));
     }
 
     #editor-pane,
@@ -48,56 +52,73 @@
         width: 100%;
         height: 100%;
         border: none;
-        z-index: 1;
-        background-color: var(--bg-color);
-        /* Ensure scrolling works smoothly */
-        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0;
     }
 
-    /* Editor handles its own scroll, so no overflow on pane */
-    #editor-pane {
-        overflow: hidden;
-    }
-
-    /* Preview needs explicit overflow */
     #preview-pane {
-        overflow-y: auto;
+        padding: 24px 16px;
+        /* Less padding on mobile */
+        padding-bottom: 80px;
+        /* Space for overscroll or floating buttons if added */
     }
 
-    /* Ensure CodeMirror captures touches properly */
-    .cm-scroller {
-        touch-action: pan-y;
-        overflow-y: auto !important;
-    }
+    /* Toggle Handling */
 
-    /* Toggle Mechanism: Use Z-Index and Visibility to prevent interaction with hidden layer */
-
-    /* Editor Mode (Default) */
+    /* Default: Show Editor */
     #workspace:not(.show-preview) #editor-pane {
         z-index: 10;
         visibility: visible;
+        opacity: 1;
+        transform: translateX(0);
+        transition: opacity 0.2s, transform 0.2s;
     }
 
     #workspace:not(.show-preview) #preview-pane {
         z-index: 0;
         visibility: hidden;
+        opacity: 0;
+        transform: translateX(20px);
+        transition: opacity 0.2s, transform 0.2s;
     }
 
-    /* Preview Mode */
+    /* Active: Show Preview */
     #workspace.show-preview #preview-pane {
         z-index: 10;
         visibility: visible;
+        opacity: 1;
+        transform: translateX(0);
+        transition: opacity 0.2s, transform 0.2s;
     }
 
     #workspace.show-preview #editor-pane {
         z-index: 0;
         visibility: hidden;
+        opacity: 0;
+        transform: translateX(-20px);
+        transition: opacity 0.2s, transform 0.2s;
     }
 
-    /* Padding adjustment */
+    /* Enhance Toggle Button Visibility */
+    #btn-toggle-view {
+        background-color: var(--accent-color) !important;
+        color: white !important;
+        border: none;
+        box-shadow: 0 4px 12px var(--accent-glow);
+    }
+
+    #btn-toggle-view:active {
+        transform: scale(0.95);
+    }
+
+    /* Fix scrolling behavior */
+    .cm-scroller,
     #preview-pane {
-        padding: 24px 16px;
-        padding-bottom: 80px;
-        /* Extra bottom padding for mobile browsers */
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .cm-scroller {
+        font-size: 16px !important;
+        /* Prevent iOS zoom */
     }
 }

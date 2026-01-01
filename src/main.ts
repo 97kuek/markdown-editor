@@ -64,9 +64,40 @@ btnToggleView?.addEventListener('click', () => {
 // Initialize Editor
 let onScrollHandler: (view: EditorView) => void = () => { }
 
-const editorView = createEditor(editorPane, initialContent, (doc) => {
+// --- Collaboration Setup ---
+import * as Y from 'yjs'
+import { WebrtcProvider } from 'y-webrtc'
+import { yCollab } from 'y-codemirror.next'
+import QRCode from 'qrcode'
+
+// Get room from URL hash or generate new one
+const getRoomFromUrl = () => {
+  const hash = window.location.hash
+  if (hash.startsWith('#room=')) {
+    return hash.substring(6)
+  }
+  return null
+}
+
+const roomName = getRoomFromUrl() || `mde-room-${Math.random().toString(36).substring(2, 7)}`
+// Update URL if new room
+if (!getRoomFromUrl()) {
+  window.history.replaceState(null, '', `#room=${roomName}`)
+}
+
+const ydoc = new Y.Doc()
+const provider = new WebrtcProvider(roomName, ydoc, { signaling: ['wss://signaling.yjs.dev'] }) // Public signaling server for demo
+const ytext = ydoc.getText('codemirror')
+
+// Sync initial content if room is empty, otherwise let Yjs handle it
+if (ytext.toString() === '') {
+  ytext.insert(0, initialContent)
+}
+
+// Editor with Collaboration
+const editorView = createEditor(editorPane, ytext.toString(), (doc) => {
   renderMarkdown(doc, previewPane)
-  localStorage.setItem(STORAGE_KEY, doc)
+  // localStorage.setItem(STORAGE_KEY, doc) // Optional: disable local storage sync to avoid conflicts or sync YDoc to indexeddb
 }, (view) => {
   onScrollHandler(view)
 }, (stats) => {
@@ -74,10 +105,12 @@ const editorView = createEditor(editorPane, initialContent, (doc) => {
   const wordsEl = document.getElementById('status-words')
   if (linesEl) linesEl.textContent = `Ln ${stats.cursorLine}, Col ${stats.cursorCol}`
   if (wordsEl) wordsEl.textContent = `${stats.words} words`
-})
+}, [
+  yCollab(ytext, provider.awareness)
+])
 
 // Initialize Preview
-renderMarkdown(initialContent, previewPane)
+renderMarkdown(ytext.toString(), previewPane)
 
 // Initialize Scroll Sync
 const { onEditorScroll } = setupScrollSync(editorView, previewPane)
@@ -85,8 +118,12 @@ onScrollHandler = onEditorScroll
 
 // Initialize File System Access
 setupFileSystem(editorView, (content) => {
+  // When loading file, replace Yjs content
+  const currentLength = ytext.length
+  if (currentLength > 0) ytext.delete(0, currentLength)
+  ytext.insert(0, content)
+
   renderMarkdown(content, previewPane)
-  localStorage.setItem(STORAGE_KEY, content)
 })
 
 // Initialize TOC
@@ -106,4 +143,64 @@ document.getElementById('btn-export-md')?.addEventListener('click', () => {
 
 document.getElementById('btn-export-pdf')?.addEventListener('click', () => {
   window.print()
+})
+
+
+// --- Share / QR Code ---
+const btnShare = document.createElement('button')
+btnShare.id = 'btn-share'
+btnShare.className = 'icon-btn'
+btnShare.title = 'Share with Mobile'
+btnShare.innerHTML = '<span class="material-symbols-outlined">qr_code_2</span>'
+// Insert before Save button
+const toolbarGroup = document.querySelector('.toolbar-group')
+const btnSave = document.getElementById('btn-save')
+if (toolbarGroup && btnSave) {
+  toolbarGroup.insertBefore(btnShare, btnSave)
+}
+
+// Modal Logic
+btnShare.addEventListener('click', async () => {
+  const url = window.location.href
+
+  // Create Modal Elements
+  const modalOverlay = document.createElement('div')
+  Object.assign(modalOverlay.style, {
+    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', zIndex: 1000,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    backdropFilter: 'blur(5px)'
+  })
+
+  const modalContent = document.createElement('div')
+  Object.assign(modalContent.style, {
+    backgroundColor: '#161b22', padding: '32px', borderRadius: '12px',
+    textAlign: 'center', color: '#fff', border: '1px solid #30363d',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+  })
+
+  const title = document.createElement('h2')
+  title.textContent = 'Scan to Join'
+  title.style.marginTop = '0'
+
+  const canvas = document.createElement('canvas')
+  await QRCode.toCanvas(canvas, url, { width: 256, margin: 2, color: { dark: '#000000', light: '#ffffff' } })
+
+  const closeBtn = document.createElement('button')
+  closeBtn.textContent = 'Close'
+  Object.assign(closeBtn.style, {
+    marginTop: '20px', padding: '8px 16px', backgroundColor: '#3b82f6',
+    color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer',
+    fontSize: '14px', fontWeight: '500'
+  })
+
+  closeBtn.onclick = () => document.body.removeChild(modalOverlay)
+  modalOverlay.onclick = (e) => { if (e.target === modalOverlay) document.body.removeChild(modalOverlay) }
+
+  modalContent.appendChild(title)
+  modalContent.appendChild(canvas)
+  modalContent.appendChild(document.createElement('br'))
+  modalContent.appendChild(closeBtn)
+  modalOverlay.appendChild(modalContent)
+  document.body.appendChild(modalOverlay)
 })
